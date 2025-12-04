@@ -1,24 +1,38 @@
-# Docker Compose for AI-Nexus Platform
+# Docker Compose for AI-Nexus Platform with GPU Support
 version: '3.8'
 
 services:
-  # Main API Service
+  # Main API Service with GPU
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ai-nexus-api
+    runtime: nvidia
     ports:
       - "8000:8000"
+      - "9090:9090"
+      - "29500:29500"
     environment:
       - PYTHONUNBUFFERED=1
       - AI_NEXUS_ENV=production
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PROMETHEUS_PORT=9090
+      # GPU settings
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_VISIBLE_DEVICES=0
+      # Distributed training
+      - MASTER_ADDR=localhost
+      - MASTER_PORT=29500
+      - WORLD_SIZE=1
+      - RANK=0
+      - LOCAL_RANK=0
     volumes:
       - ./config:/app/config:ro
       - ./data:/app/data
       - model-storage:/app/models
+      - ./mlruns:/app/mlruns
     depends_on:
       - postgres
       - redis
@@ -29,11 +43,15 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '16.0'
+          memory: 32G
+        reservations:
           cpus: '8.0'
           memory: 16G
-        reservations:
-          cpus: '4.0'
-          memory: 8G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   # MLflow Tracking Server
   mlflow:

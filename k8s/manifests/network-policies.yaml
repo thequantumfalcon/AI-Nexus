@@ -1,0 +1,80 @@
+# Network Policies for AI-Nexus
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-nexus-default-deny
+  namespace: ai-nexus
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-nexus-allow-internal
+  namespace: ai-nexus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ai-nexus
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ai-nexus
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ai-nexus
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ai-nexus
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+# Allow distributed training communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-nexus-distributed-training
+  namespace: ai-nexus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: training
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: training
+    ports:
+    - protocol: TCP
+      port: 29500  # Master port
+    - protocol: TCP
+      port: 29501  # NCCL
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: training

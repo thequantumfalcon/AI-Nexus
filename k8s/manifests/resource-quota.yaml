@@ -1,0 +1,45 @@
+# ResourceQuota for AI-Nexus namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ai-nexus-quota
+  namespace: ai-nexus
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: 500Gi
+    requests.nvidia.com/gpu: "16"
+    limits.cpu: "200"
+    limits.memory: 1000Gi
+    limits.nvidia.com/gpu: "16"
+    persistentvolumeclaims: "50"
+    pods: "100"
+    services: "20"
+---
+# LimitRange for default resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ai-nexus-limits
+  namespace: ai-nexus
+spec:
+  limits:
+  - max:
+      cpu: "16"
+      memory: "64Gi"
+      nvidia.com/gpu: "4"
+    min:
+      cpu: "100m"
+      memory: "128Mi"
+    default:
+      cpu: "2"
+      memory: "4Gi"
+    defaultRequest:
+      cpu: "1"
+      memory: "2Gi"
+    type: Container
+  - max:
+      cpu: "32"
+      memory: "128Gi"
+      nvidia.com/gpu: "8"
+    type: Pod

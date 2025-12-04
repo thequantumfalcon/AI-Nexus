@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-nexus
+  labels:
+    name: ai-nexus
+    app.kubernetes.io/name: ai-nexus
+    app.kubernetes.io/part-of: ai-nexus-platform

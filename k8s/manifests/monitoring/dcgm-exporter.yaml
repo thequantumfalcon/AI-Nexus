@@ -1,0 +1,77 @@
+# NVIDIA DCGM Exporter for GPU metrics
+# Exposes GPU metrics in Prometheus format
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dcgm-exporter
+  namespace: ai-nexus
+  labels:
+    app.kubernetes.io/name: dcgm-exporter
+    app.kubernetes.io/version: "3.1.8"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dcgm-exporter
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dcgm-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9400"
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: dcgm-exporter
+        image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          capabilities:
+            add:
+            - SYS_ADMIN
+        ports:
+        - name: metrics
+          containerPort: 9400
+        env:
+        - name: DCGM_EXPORTER_LISTEN
+          value: ":9400"
+        - name: DCGM_EXPORTER_KUBERNETES
+          value: "true"
+        volumeMounts:
+        - name: pod-gpu-resources
+          mountPath: /var/lib/kubelet/pod-resources
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: pod-gpu-resources
+        hostPath:
+          path: /var/lib/kubelet/pod-resources
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcgm-exporter
+  namespace: ai-nexus
+  labels:
+    app.kubernetes.io/name: dcgm-exporter
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 9400
+    targetPort: 9400
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: dcgm-exporter

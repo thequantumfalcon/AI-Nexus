@@ -1,0 +1,24 @@
+apiVersion: v2
+name: ai-nexus
+description: GPU-Accelerated AI Platform with Privacy-Preserving ML
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - machine-learning
+  - gpu
+  - cuda
+  - privacy
+  - federated-learning
+  - distributed-training
+maintainers:
+  - name: AI-Nexus Team
+    email: team@ai-nexus.io
+sources:
+  - https://github.com/thequantumfalcon/AI-Nexus
+icon: https://ai-nexus.io/logo.png
+dependencies: []
+annotations:
+  category: MachineLearning
+  licenses: MIT

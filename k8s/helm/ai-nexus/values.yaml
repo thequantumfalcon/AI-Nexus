@@ -1,0 +1,260 @@
+# AI-Nexus Helm Chart Default Values
+# This is a YAML-formatted file declaring default values for the chart.
+
+# Replica configuration
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: ai-nexus
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# GPU Configuration
+gpu:
+  enabled: true
+  # Number of GPUs per pod
+  count: 1
+  # GPU memory limit (in GB)
+  memory: 16
+  # GPU vendor (nvidia, amd)
+  vendor: nvidia
+  # GPU driver version requirement
+  driverVersion: ">=525.60.13"
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 2000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: ai-nexus.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ai-nexus-tls
+      hosts:
+        - ai-nexus.local
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 8000m
+    memory: 32Gi
+    nvidia.com/gpu: 1
+  requests:
+    cpu: 4000m
+    memory: 16Gi
+    nvidia.com/gpu: 1
+
+# Autoscaling configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  # GPU-aware scaling metrics
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: gpu_utilization
+        target:
+          type: AverageValue
+          averageValue: "80"
+
+# Node selector for GPU nodes
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+# Tolerations for GPU taints
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+
+# Affinity rules
+affinity:
+  # Prefer spreading pods across nodes
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - ai-nexus
+          topologyKey: kubernetes.io/hostname
+
+# Persistent storage
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  accessMode: ReadWriteOnce
+  size: 100Gi
+  mountPath: /data
+  annotations: {}
+
+# Environment variables
+env:
+  - name: CUDA_VISIBLE_DEVICES
+    value: "all"
+  - name: NCCL_DEBUG
+    value: "INFO"
+  - name: PYTHONUNBUFFERED
+    value: "1"
+  - name: OMP_NUM_THREADS
+    value: "8"
+
+# ConfigMap data
+configMap:
+  data:
+    LOG_LEVEL: "INFO"
+    ENABLE_METRICS: "true"
+    METRICS_PORT: "9090"
+
+# Secrets (use external secret manager in production)
+secrets: {}
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Startup probe for slow-starting containers
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+# Monitoring and observability
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+    path: /metrics
+  grafana:
+    enabled: true
+    dashboards:
+      - gpu-utilization
+      - training-metrics
+      - system-resources
+
+# Distributed training configuration
+distributed:
+  enabled: false
+  # Number of worker nodes
+  workers: 2
+  # Backend: nccl, gloo, mpi
+  backend: nccl
+  # Master port for distributed coordination
+  masterPort: 29500
+  # NCCL settings
+  nccl:
+    socketIfname: "eth0"
+    ibGidIndex: 3
+    ibTrafficClass: 106
+
+# MLflow tracking
+mlflow:
+  enabled: true
+  trackingUri: "http://mlflow:5000"
+  experimentName: "ai-nexus"
+
+# Network policies
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: ai-nexus
+      ports:
+      - protocol: TCP
+        port: 8000
+  egress:
+    - to:
+      - namespaceSelector: {}
+      ports:
+      - protocol: TCP
+        port: 53  # DNS
+      - protocol: UDP
+        port: 53
+
+# Priority class for GPU workloads
+priorityClassName: "high-priority-gpu"
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Additional volumes
+volumes: []
+
+# Additional volume mounts
+volumeMounts: []
