@@ -1,0 +1,27 @@
+syntax = "proto3";
+package artp_service;
+
+service ARTPService {
+  rpc SendData(SendDataRequest) returns (SendDataResponse);
+  rpc ReceiveData(ReceiveDataRequest) returns (stream ReceiveDataResponse);
+}
+
+message SendDataRequest {
+  uint32 target_id = 1;
+  string task_type = 2;
+  bytes data = 3;
+  uint32 priority = 4;
+}
+
+message SendDataResponse {
+  string status = 1;
+}
+
+message ReceiveDataRequest {
+  string task_type = 1;
+}
+
+message ReceiveDataResponse {
+  bytes data = 1;
+  uint32 sender_id = 2;
+}
