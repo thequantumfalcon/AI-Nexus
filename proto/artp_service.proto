@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package artp_service;
+
+// ARTP Service - Advanced Resilient Transport Protocol
+// Handles secure, distributed task routing and communication
+
+service ARTPService {
+  // Send data/task to a target node
+  rpc SendData(SendDataRequest) returns (SendDataResponse);
+  
+  // Receive data stream for specific task types
+  rpc ReceiveData(ReceiveDataRequest) returns (stream ReceiveDataResponse);
+  
+  // Discover available nodes in the network
+  rpc DiscoverNodes(DiscoverNodesRequest) returns (DiscoverNodesResponse);
+  
+  // Get node health and status
+  rpc GetNodeStatus(NodeStatusRequest) returns (NodeStatusResponse);
+  
+  // Register a new node to the network
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+}
+
+message SendDataRequest {
+  uint32 target_id = 1;
+  string task_type = 2;
+  bytes data = 3;
+  uint32 priority = 4;
+  bool require_encryption = 5;
+  map<string, string> metadata = 6;
+}
+
+message SendDataResponse {
+  string status = 1;
+  string message = 2;
+  uint64 timestamp = 3;
+}
+
+message ReceiveDataRequest {
+  string task_type = 1;
+  uint32 max_messages = 2;
+  uint32 timeout_seconds = 3;
+}
+
+message ReceiveDataResponse {
+  bytes data = 1;
+  uint32 sender_id = 2;
+  string task_type = 3;
+  uint64 timestamp = 4;
+  map<string, string> metadata = 5;
+}
+
+message DiscoverNodesRequest {
+  string node_type = 1;
+  uint32 max_results = 2;
+}
+
+message DiscoverNodesResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+message NodeInfo {
+  uint32 node_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  string node_type = 4;
+  float load = 5;
+  repeated string capabilities = 6;
+}
+
+message NodeStatusRequest {
+  uint32 node_id = 1;
+}
+
+message NodeStatusResponse {
+  uint32 node_id = 1;
+  string status = 2;
+  float cpu_usage = 3;
+  float memory_usage = 4;
+  uint64 tasks_completed = 5;
+  uint64 uptime_seconds = 6;
+}
+
+message RegisterNodeRequest {
+  uint32 node_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  string node_type = 4;
+  repeated string capabilities = 5;
+}
+
+message RegisterNodeResponse {
+  bool success = 1;
+  string message = 2;
+}

@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package nlp_service;
+
+// NLP Service - Secure Natural Language Processing
+// Provides privacy-preserving NLP capabilities
+
+service NLPService {
+  // Process text with various NLP tasks
+  rpc ProcessText(ProcessTextRequest) returns (ProcessTextResponse);
+  
+  // Batch process multiple texts
+  rpc ProcessBatch(ProcessBatchRequest) returns (stream ProcessTextResponse);
+  
+  // Analyze sentiment
+  rpc AnalyzeSentiment(SentimentRequest) returns (SentimentResponse);
+  
+  // Extract entities
+  rpc ExtractEntities(EntityRequest) returns (EntityResponse);
+  
+  // Generate text
+  rpc GenerateText(GenerationRequest) returns (GenerationResponse);
+  
+  // Get model capabilities
+  rpc GetCapabilities(CapabilitiesRequest) returns (CapabilitiesResponse);
+}
+
+message ProcessTextRequest {
+  string text = 1;
+  string task_type = 2;  // classification, summarization, qa, etc.
+  string compliance_mode = 3;  // HIPAA, GDPR, etc.
+  string security_level = 4;  // low, medium, high
+  map<string, string> parameters = 5;
+  bool enable_explainability = 6;
+}
+
+message ProcessTextResponse {
+  string result = 1;
+  float confidence = 2;
+  map<string, float> explanation = 3;  // SHAP values
+  uint64 processing_time_ms = 4;
+  string model_version = 5;
+}
+
+message ProcessBatchRequest {
+  repeated ProcessTextRequest requests = 1;
+}
+
+message SentimentRequest {
+  string text = 1;
+  string language = 2;
+}
+
+message SentimentResponse {
+  string sentiment = 1;  // positive, negative, neutral
+  float score = 2;
+  map<string, float> detailed_scores = 3;
+}
+
+message EntityRequest {
+  string text = 1;
+  repeated string entity_types = 2;  // PERSON, ORG, LOC, etc.
+}
+
+message EntityResponse {
+  repeated Entity entities = 1;
+}
+
+message Entity {
+  string text = 1;
+  string type = 2;
+  uint32 start = 3;
+  uint32 end = 4;
+  float confidence = 5;
+}
+
+message GenerationRequest {
+  string prompt = 1;
+  uint32 max_length = 2;
+  float temperature = 3;
+  uint32 top_k = 4;
+  float top_p = 5;
+}
+
+message GenerationResponse {
+  string generated_text = 1;
+  repeated string alternatives = 2;
+  uint64 generation_time_ms = 3;
+}
+
+message CapabilitiesRequest {}
+
+message CapabilitiesResponse {
+  repeated string supported_tasks = 1;
+  repeated string supported_languages = 2;
+  repeated string compliance_modes = 3;
+  string model_name = 4;
+  string model_version = 5;
+}

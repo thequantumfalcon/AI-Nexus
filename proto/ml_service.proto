@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package ml_service;
+
+// ML Service - Privacy-Preserving Machine Learning
+// Provides distributed, federated ML capabilities
+
+service MLService {
+  // Train a model with data
+  rpc TrainModel(TrainRequest) returns (TrainResponse);
+  
+  // Stream training updates
+  rpc StreamTraining(TrainRequest) returns (stream TrainUpdate);
+  
+  // Make predictions
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  
+  // Federated learning - submit local update
+  rpc SubmitLocalUpdate(LocalUpdateRequest) returns (LocalUpdateResponse);
+  
+  // Federated learning - get global model
+  rpc GetGlobalModel(GlobalModelRequest) returns (GlobalModelResponse);
+  
+  // Evaluate model performance
+  rpc EvaluateModel(EvaluateRequest) returns (EvaluateResponse);
+}
+
+message TrainRequest {
+  string model_type = 1;  // linear, neural_net, transformer, etc.
+  bytes data = 2;  // Encrypted or plain data
+  map<string, string> hyperparameters = 3;
+  bool use_differential_privacy = 4;
+  float privacy_epsilon = 5;
+  bool use_federated = 6;
+}
+
+message TrainResponse {
+  string model_id = 1;
+  bytes model_weights = 2;  // Encrypted
+  float final_loss = 3;
+  float final_accuracy = 4;
+  uint64 training_time_ms = 5;
+  repeated Metric metrics = 6;
+}
+
+message TrainUpdate {
+  uint32 epoch = 1;
+  float loss = 2;
+  float accuracy = 3;
+  uint32 batch = 4;
+  map<string, float> metrics = 5;
+}
+
+message PredictRequest {
+  string model_id = 1;
+  bytes input_data = 2;
+  bool return_confidence = 3;
+  bool return_explanation = 4;
+}
+
+message PredictResponse {
+  bytes prediction = 1;
+  float confidence = 2;
+  map<string, float> explanation = 3;  // Feature importance
+  uint64 inference_time_ms = 4;
+}
+
+message LocalUpdateRequest {
+  string session_id = 1;
+  uint32 node_id = 2;
+  bytes model_update = 3;  // Gradient or weight update
+  uint32 num_samples = 4;
+  float local_loss = 5;
+}
+
+message LocalUpdateResponse {
+  bool accepted = 1;
+  string message = 2;
+  uint32 round_number = 3;
+}
+
+message GlobalModelRequest {
+  string session_id = 1;
+  uint32 round_number = 2;
+}
+
+message GlobalModelResponse {
+  bytes model_weights = 1;
+  uint32 round_number = 2;
+  uint32 num_participants = 3;
+  float global_loss = 4;
+}
+
+message EvaluateRequest {
+  string model_id = 1;
+  bytes test_data = 2;
+  repeated string metrics = 3;  // accuracy, precision, recall, f1, etc.
+}
+
+message EvaluateResponse {
+  map<string, float> metrics = 1;
+  bytes confusion_matrix = 2;
+  repeated Metric detailed_metrics = 3;
+}
+
+message Metric {
+  string name = 1;
+  float value = 2;
+  uint64 timestamp = 3;
+}

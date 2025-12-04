@@ -1,0 +1,33 @@
+# GPU-accelerated dependencies for CUDA 13.0+
+# Install PyTorch with CUDA support first:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# CUDA compilation and kernels
+cupy-cuda12x==13.0.0
+numba==0.59.0
+pycuda==2024.1
+
+# GPU-accelerated ML libraries
+nvidia-ml-py==12.535.133
+gputil==1.4.0
+
+# Tensor optimizations
+triton==2.2.0
+onnxruntime-gpu==1.16.3
+
+# Distributed GPU training
+horovod==0.28.1
+nccl==2.20.5
+
+# Memory management
+nvidia-cudnn-cu12==9.0.0.312
+nvidia-cublas-cu12==12.3.4.1
+nvidia-cufft-cu12==11.0.12.1
+
+# Vector databases for GPU
+qdrant-client==1.7.0
+faiss-gpu==1.7.4
+
+# Monitoring
+py3nvml==0.2.7
+pynvml==11.5.0
