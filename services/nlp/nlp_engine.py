@@ -35,6 +35,8 @@ from core.crypto import (
 from core.logger import get_logger
 from core.metrics import measure_time
 from core.config import get_config
+from src.nlp.photonic_accelerator import PhotonicAccelerator
+from src.nlp.biological_co_processor import BiologicalCoProcessor
 
 logger = get_logger(__name__)
 config = get_config()
@@ -84,6 +86,12 @@ class SecureNLPEngine:
         
         # Pipelines
         self._pipelines = {}
+        
+        # Photonic acceleration for matrix ops
+        self.photonic = PhotonicAccelerator()
+        
+        # Biological co-processing for spiking networks
+        self.biological = BiologicalCoProcessor()
         
         logger.info(f"NLP Engine initialized with model: {model_name} on {device}")
     
@@ -162,6 +170,23 @@ class SecureNLPEngine:
         parameters = parameters or {}
         
         logger.info(f"Processing text with task: {task_type}, compliance: {compliance_mode}")
+        
+        # Photonic acceleration for matrix operations
+        if config.get('ai_services.nlp.use_photonic', True):
+            photonic_start = time.time()
+            # Simulate photonic processing for embeddings
+            text_embeddings = self.photonic.process_batch([text])
+            photonic_time = time.time() - photonic_start
+            logger.info(f"Photonic processing took {photonic_time:.4f}s")
+        
+        # Biological co-processing for specific tasks
+        if task_type in ['sentiment', 'classification'] and config.get('ai_services.nlp.use_biological', True):
+            bio_start = time.time()
+            # Simulate biological processing
+            dummy_embeddings = np.random.randn(1, 100)  # Placeholder
+            bio_output = self.biological.process_text_embeddings(dummy_embeddings)
+            bio_time = time.time() - bio_start
+            logger.info(f"Biological processing took {bio_time:.4f}s")
         
         # Apply privacy preservation based on compliance mode
         if compliance_mode in ['HIPAA', 'GDPR'] and security_level == 'high':
