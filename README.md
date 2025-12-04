@@ -48,6 +48,55 @@ AI-Nexus/
 - Self-healing network topology
 - Federated learning
 ### AI Capabilities
+- Quantum Error Correction (Stim/PyMatching)
+- Distributed Physics Simulations (Dask/Ray)
+- Multi-LLM RAG (OpenAI/Claude/Groq)
+- Model Validation & Testing
+- Real-time Dashboards (React/Recharts)
+
+## Integrated Repositories
+
+AI-Nexus integrates high-value components from analyzed repositories:
+
+### Quantum Simulations (fern-v6.7, qenme-simulator, Triad-Nexus)
+- **FERN**: Stim-based QEC simulator with surface/XZZX codes, decoders (MWPM/Union-Find/Neural/BP), threshold analysis (~1.09%)
+- **QENME**: Distributed physics proxies (SYK, chaos, MD, QCML) with Dask scaling
+- **Triad QEC**: Surface code with 4 decoders, hardware noise models, FastAPI API
+Located in `src/quantum/`, `src/simulator/`
+
+### NLP & RAG (Raptor-NLP)
+- Multi-LLM RAG (OpenAI/Claude/Groq) with ChromaDB/pgvector, document processing, streaming
+Located in `src/nlp/`
+
+### Distributed Computing (sympoiesis-networks)
+- Ray actors for ML quest ranking, physics sims (Lorenz/SIR/chem), ZKP crypto
+Located in `src/distributed/`
+
+### Validation (qenme-validation)
+- ModelValidator for conservation/bounds, QEC noise CPTP checks
+Located in `src/validation/`
+
+### Frontend Dashboard (fenr-dashboard)
+- React/TS dashboard with Web Vitals, recharts viz, quantum tabs
+Located in `frontend/`
+
+## Quick Start
+
+```bash
+# Install deps
+pip install -r requirements.txt
+
+# Run integrated demo
+python ai_nexus.py
+
+# Start frontend
+cd frontend && npm install && npm run dev
+
+# Run quantum sim
+python -c "from src.quantum.core import FERN; print(FERN().run_memory_experiment(d=7))"
+```
+
+## Architecture
 - Advanced NLP with transformer models
 - Distributed ML training
 - Real-time inference
