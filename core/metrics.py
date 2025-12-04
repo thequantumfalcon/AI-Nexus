@@ -79,6 +79,122 @@ TOKENS_DISTRIBUTED = Counter(
     'Total tokens distributed as rewards'
 )
 
+# ============================================================================
+# Enterprise LLM Metrics (Week 5 Addition)
+# ============================================================================
+
+# HTTP Request Metrics
+HTTP_REQUESTS_TOTAL = Counter(
+    'ainexus_http_requests_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status']
+)
+
+HTTP_REQUEST_DURATION = Histogram(
+    'ainexus_http_request_duration_seconds',
+    'HTTP request latency',
+    ['method', 'endpoint'],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0]
+)
+
+HTTP_REQUESTS_IN_PROGRESS = Gauge(
+    'ainexus_http_requests_in_progress',
+    'HTTP requests currently in progress',
+    ['method', 'endpoint']
+)
+
+# LLM Inference Metrics
+LLM_INFERENCE_TOTAL = Counter(
+    'ainexus_llm_inference_total',
+    'Total LLM inference requests',
+    ['model', 'operation', 'status']
+)
+
+LLM_INFERENCE_DURATION = Histogram(
+    'ainexus_llm_inference_duration_seconds',
+    'LLM inference latency',
+    ['model', 'operation'],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 120.0]
+)
+
+LLM_TOKENS_PER_SECOND = Summary(
+    'ainexus_llm_tokens_per_second',
+    'LLM token generation rate',
+    ['model']
+)
+
+LLM_INPUT_TOKENS_TOTAL = Counter(
+    'ainexus_llm_input_tokens_total',
+    'Total LLM input tokens',
+    ['model', 'user']
+)
+
+LLM_OUTPUT_TOKENS_TOTAL = Counter(
+    'ainexus_llm_output_tokens_total',
+    'Total LLM output tokens',
+    ['model', 'user']
+)
+
+# GPU Metrics
+GPU_UTILIZATION_PERCENT = Gauge(
+    'ainexus_gpu_utilization_percent',
+    'GPU utilization percentage',
+    ['gpu_id']
+)
+
+GPU_MEMORY_USED_BYTES = Gauge(
+    'ainexus_gpu_memory_used_bytes',
+    'GPU memory used in bytes',
+    ['gpu_id']
+)
+
+GPU_TEMPERATURE_CELSIUS = Gauge(
+    'ainexus_gpu_temperature_celsius',
+    'GPU temperature in Celsius',
+    ['gpu_id']
+)
+
+# Vector Database Metrics
+VECTOR_SEARCH_TOTAL = Counter(
+    'ainexus_vector_search_total',
+    'Total vector searches',
+    ['collection', 'status']
+)
+
+VECTOR_SEARCH_DURATION = Histogram(
+    'ainexus_vector_search_duration_seconds',
+    'Vector search latency',
+    ['collection'],
+    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0]
+)
+
+# RAG Metrics
+RAG_QUERY_TOTAL = Counter(
+    'ainexus_rag_query_total',
+    'Total RAG queries',
+    ['status']
+)
+
+RAG_QUERY_DURATION = Histogram(
+    'ainexus_rag_query_duration_seconds',
+    'RAG query end-to-end latency',
+    buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+)
+
+# Cost Metrics
+COST_TOTAL_DOLLARS = Counter(
+    'ainexus_cost_total_dollars',
+    'Total cost in dollars',
+    ['model', 'user']
+)
+
+# Error Metrics
+ERRORS_TOTAL = Counter(
+    'ainexus_errors_total',
+    'Total errors',
+    ['error_type', 'endpoint']
+)
+
 
 class MetricsCollector:
     """Centralized metrics collection"""
@@ -127,6 +243,62 @@ class MetricsCollector:
     def record_token_distribution(self, amount: float):
         """Record token distribution"""
         TOKENS_DISTRIBUTED.inc(amount)
+    
+    # ============================================================================
+    # Enterprise LLM Metrics Methods (Week 5 Addition)
+    # ============================================================================
+    
+    def record_http_request(self, method: str, endpoint: str, status: str, duration: float):
+        """Record HTTP request metrics"""
+        HTTP_REQUESTS_TOTAL.labels(method=method, endpoint=endpoint, status=status).inc()
+        HTTP_REQUEST_DURATION.labels(method=method, endpoint=endpoint).observe(duration)
+    
+    def record_llm_inference(
+        self,
+        model: str,
+        operation: str,
+        status: str,
+        duration: float,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        user: str = "unknown"
+    ):
+        """Record LLM inference metrics"""
+        LLM_INFERENCE_TOTAL.labels(model=model, operation=operation, status=status).inc()
+        LLM_INFERENCE_DURATION.labels(model=model, operation=operation).observe(duration)
+        
+        if input_tokens > 0:
+            LLM_INPUT_TOKENS_TOTAL.labels(model=model, user=user).inc(input_tokens)
+        
+        if output_tokens > 0:
+            LLM_OUTPUT_TOKENS_TOTAL.labels(model=model, user=user).inc(output_tokens)
+            if duration > 0:
+                tokens_per_sec = output_tokens / duration
+                LLM_TOKENS_PER_SECOND.labels(model=model).observe(tokens_per_sec)
+    
+    def update_gpu_metrics(self, gpu_id: str, utilization: float, memory_used: int, temperature: float):
+        """Update GPU metrics"""
+        GPU_UTILIZATION_PERCENT.labels(gpu_id=gpu_id).set(utilization)
+        GPU_MEMORY_USED_BYTES.labels(gpu_id=gpu_id).set(memory_used)
+        GPU_TEMPERATURE_CELSIUS.labels(gpu_id=gpu_id).set(temperature)
+    
+    def record_vector_search(self, collection: str, status: str, duration: float):
+        """Record vector search metrics"""
+        VECTOR_SEARCH_TOTAL.labels(collection=collection, status=status).inc()
+        VECTOR_SEARCH_DURATION.labels(collection=collection).observe(duration)
+    
+    def record_rag_query(self, status: str, duration: float):
+        """Record RAG query metrics"""
+        RAG_QUERY_TOTAL.labels(status=status).inc()
+        RAG_QUERY_DURATION.observe(duration)
+    
+    def record_cost(self, model: str, user: str, cost: float):
+        """Record cost metrics"""
+        COST_TOTAL_DOLLARS.labels(model=model, user=user).inc(cost)
+    
+    def record_error(self, error_type: str, endpoint: str):
+        """Record error metrics"""
+        ERRORS_TOTAL.labels(error_type=error_type, endpoint=endpoint).inc()
 
 
 def measure_time(task_type: str = "unknown"):
