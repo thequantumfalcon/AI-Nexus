@@ -355,22 +355,28 @@ class GPUSecureMultiPartyComputation:
             # Generate random polynomial coefficients
             coeffs = [secret_gpu]
             for _ in range(threshold - 1):
+                # Use int32 to avoid overflow with torch.randint
                 coeffs.append(
-                    torch.randint(0, self.prime, secret.shape, device='cuda')
+                    torch.randint(0, min(self.prime, 2147483647), secret.shape, 
+                                  device='cuda', dtype=torch.int32).to(torch.float32)
                 )
             
             # Evaluate polynomial at different points
             shares = []
+            prime_tensor = torch.tensor(self.prime, dtype=torch.float32, device='cuda')
+            
             for party_id in range(1, self.num_parties + 1):
-                x = party_id
+                x = torch.tensor(party_id, dtype=torch.float32, device='cuda')
                 
                 # Evaluate polynomial: p(x) = a0 + a1*x + a2*x^2 + ...
                 share = coeffs[0].clone()
                 x_power = x
                 
                 for i in range(1, threshold):
-                    share = (share + coeffs[i] * x_power) % self.prime
-                    x_power = (x_power * x) % self.prime
+                    # Use float operations to avoid overflow, then mod
+                    term = coeffs[i] * x_power
+                    share = torch.fmod(share + term, prime_tensor)
+                    x_power = torch.fmod(x_power * x, prime_tensor)
                 
                 shares.append((party_id, share.cpu().numpy()))
             

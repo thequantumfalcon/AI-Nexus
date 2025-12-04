@@ -307,6 +307,30 @@ class PrivacyKernel(CUDAKernel):
     def __init__(self):
         super().__init__()
     
+    def forward(self, data: np.ndarray, noise_type: str = 'gaussian', **kwargs) -> np.ndarray:
+        """
+        Main forward pass for privacy kernel
+        
+        Args:
+            data: Input data
+            noise_type: Type of noise ('gaussian' or 'laplace')
+            **kwargs: Additional parameters for noise generation
+        
+        Returns:
+            Privatized data
+        """
+        if noise_type == 'gaussian':
+            epsilon = kwargs.get('epsilon', 1.0)
+            delta = kwargs.get('delta', 1e-5)
+            sensitivity = kwargs.get('sensitivity', 1.0)
+            return self.add_gaussian_noise(data, epsilon, delta, sensitivity)
+        elif noise_type == 'laplace':
+            epsilon = kwargs.get('epsilon', 1.0)
+            sensitivity = kwargs.get('sensitivity', 1.0)
+            return self.add_laplace_noise(data, epsilon, sensitivity)
+        else:
+            raise ValueError(f"Unknown noise type: {noise_type}")
+    
     def add_gaussian_noise(
         self,
         data: np.ndarray,
